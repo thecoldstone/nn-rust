@@ -1,3 +1,5 @@
+use dense_layer::LayerDense;
+use ndarray::{Array1, Array2};
 use plotters::{
     backend::BitMapBackend,
     chart::{ChartBuilder, LabelAreaPosition},
@@ -6,32 +8,13 @@ use plotters::{
     style::{Color, BLUE, WHITE},
 };
 
+use crate::activation_functions::relu::ReLU;
+
+mod activation_functions;
+mod dense_layer;
 mod spiral;
 
-pub trait NeuronTrait {
-    fn mutate(&self, weights: &[f64], bias: f64) -> f64;
-}
-
-pub struct Neuron {
-    pub input: [f64; 4],
-}
-
-impl NeuronTrait for Neuron {
-    fn mutate(&self, weights: &[f64], bias: f64) -> f64 {
-        let mut output = 0.0;
-
-        for input in self.input.into_iter().enumerate() {
-            let (i, x): (usize, f64) = input;
-            output += x as f64 * weights[i]
-        }
-
-        return output + bias;
-    }
-}
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (x, y) = spiral::create_data(100, 3);
-
+fn draw(x: Array2<f64>, y: Array1<u8>) -> Result<(), Box<dyn std::error::Error>> {
     let coordinates: Vec<(&f64, &f64)> = {
         let x_axis = x.slice(ndarray::s![.., 0]);
         let y_axis = x.slice(ndarray::s![.., 1]);
@@ -57,4 +40,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     root.present()?;
     Ok(())
+}
+
+fn main() {
+    let (x, y) = spiral::create_data(100, 3);
+
+    /* draw(x, y).unwrap() */
+    let layer = LayerDense::new(2, 3);
+    let mut relu = ReLU::new();
+
+    let output = layer.forward(x.clone());
+    relu.forward(output.clone());
+
+    println!("{:?}", relu.output.unwrap().slice(ndarray::s![..5, ..]));
 }
